@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace stagevoorbereiding_API.dal
+namespace stagevoorbereiding_API.DAL
 {
     public class DataBaseContext : DbContext
     {
@@ -8,5 +8,8 @@ namespace stagevoorbereiding_API.dal
         {
         }
         
+        public DbSet<EmployeeDTO> Employees { get; set; }
+        public DbSet<PlanningDTO> Planning { get; set; }
+        public DbSet<ProjectDTO> Projects { get; set; }
     }
 }

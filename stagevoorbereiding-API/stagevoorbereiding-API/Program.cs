@@ -2,7 +2,7 @@ using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
-using stagevoorbereiding_API.dal;
+using stagevoorbereiding_API.DAL;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,10 +22,7 @@ builder.Host.ConfigureContainer<ContainerBuilder>(containerBuilder =>
     });
 
     containerBuilder.RegisterInstance(config).AsSelf().SingleInstance();
-    containerBuilder
-        .Register(ctx => config.CreateMapper())
-        .As<IMapper>()
-        .SingleInstance();
+    containerBuilder.Register(ctx => config.CreateMapper()).As<IMapper>().SingleInstance();
 });
 
 var app = builder.Build();
