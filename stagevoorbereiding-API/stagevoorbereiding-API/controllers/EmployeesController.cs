@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using stagevoorbereiding_API.DAL;
+using stagevoorbereiding_API.services;
 
 namespace stagevoorbereiding_API.controllers
 {
@@ -13,6 +13,13 @@ namespace stagevoorbereiding_API.controllers
         public EmployeesController(DataBaseContext context)
         {
             _context = context;
+        }
+
+        [HttpGet]
+        public ActionResult<IEnumerable<EmployeeDTO>> GetEmployees()
+        {
+            EmployeesService employeesService = new EmployeesService(_context);
+            return Ok(employeesService.GetAllEmployees());
         }
     }
 }

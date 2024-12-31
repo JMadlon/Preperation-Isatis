@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using stagevoorbereiding_API.DAL;
 
 namespace stagevoorbereiding_API.controllers
