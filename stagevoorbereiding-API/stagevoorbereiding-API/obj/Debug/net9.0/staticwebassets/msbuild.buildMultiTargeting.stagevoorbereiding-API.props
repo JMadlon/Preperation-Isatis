@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="..\build\stagevoorbereiding-API.props" />
-</Project>
