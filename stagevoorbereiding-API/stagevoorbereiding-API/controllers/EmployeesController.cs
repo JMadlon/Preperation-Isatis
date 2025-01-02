@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using stagevoorbereiding_API.DAL;
 using stagevoorbereiding_API.services;
 
 namespace stagevoorbereiding_API.controllers
@@ -8,18 +7,17 @@ namespace stagevoorbereiding_API.controllers
     [Route("/employees")]
     public class EmployeesController : ControllerBase
     {
-        private readonly DataBaseContext _context;
+        private readonly EmployeesService _employeesService;
 
-        public EmployeesController(DataBaseContext context)
+        public EmployeesController(EmployeesService employeesService)
         {
-            _context = context;
+            _employeesService = employeesService;
         }
 
         [HttpGet]
         public ActionResult<IEnumerable<EmployeeDTO>> GetEmployees()
         {
-            EmployeesService employeesService = new EmployeesService(_context);
-            return Ok(employeesService.GetAllEmployees());
+            return Ok(_employeesService.GetAllEmployees());
         }
     }
 }

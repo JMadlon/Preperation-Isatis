@@ -4891,11 +4891,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\jakem\\Documents\\GitHub\\Preperation-Isatis\\stagevoorbereiding-api\\stagevoorbereiding-api\\stagevoorbereiding-API.csproj",
+      "projectUniqueName": "C:\\Users\\jakem\\Documents\\GitHub\\Preperation-Isatis\\stagevoorbereiding-API\\stagevoorbereiding-API\\stagevoorbereiding-API.csproj",
       "projectName": "stagevoorbereiding-API",
-      "projectPath": "C:\\Users\\jakem\\Documents\\GitHub\\Preperation-Isatis\\stagevoorbereiding-api\\stagevoorbereiding-api\\stagevoorbereiding-API.csproj",
+      "projectPath": "C:\\Users\\jakem\\Documents\\GitHub\\Preperation-Isatis\\stagevoorbereiding-API\\stagevoorbereiding-API\\stagevoorbereiding-API.csproj",
       "packagesPath": "C:\\Users\\jakem\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\jakem\\Documents\\GitHub\\Preperation-Isatis\\stagevoorbereiding-api\\stagevoorbereiding-api\\obj\\",
+      "outputPath": "C:\\Users\\jakem\\Documents\\GitHub\\Preperation-Isatis\\stagevoorbereiding-API\\stagevoorbereiding-API\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\jakem\\AppData\\Roaming\\NuGet\\NuGet.Config"
