@@ -9,42 +9,123 @@ import {
   Paper,
   Button,
   TextField,
-  Box
+  Box,
+  CircularProgress,
 } from '@mui/material';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
+// Backend base URL
+const BACKEND_URL = 'http://localhost:5173'; // Replace with your backend URL if different
+
+// Fetch employees from the backend
+const fetchEmployees = async () => {
+  const response = await fetch(`${BACKEND_URL}/employees`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch employees');
+  }
+  return response.json();
+};
+
+// Update employees in the backend
+const updateEmployees = async (employees) => {
+  const response = await fetch(`${BACKEND_URL}/employees`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(employees),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to update employees');
+  }
+  return response.json();
+};
+
+// Delete an employee in the backend
+const deleteEmployee = async (id) => {
+  const response = await fetch(`${BACKEND_URL}/employees/${id}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) {
+    throw new Error('Failed to delete employee');
+  }
+  return id;
+};
 
 export default function Employees() {
-  const [rows, setRows] = useState([
-    { name: 'Alice', contractHours: 40 },
-    { name: 'Bob', contractHours: 32 },
-  ]);
-
+  const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
 
-  const handleToggleEdit = () => {
-    setIsEditing((prev) => !prev);
-  };
+  // Use React Query for fetching employees
+  const {
+    data: rows = [],
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ['employees'],
+    queryFn: fetchEmployees,
+  });
 
-  const handleChange = (index, field, newValue) => {
-    setRows((prevRows) => {
-      const updatedRows = [...prevRows];
-      updatedRows[index] = {
-        ...updatedRows[index],
-        [field]: newValue,
-      };
-      return updatedRows;
-    });
-  };
+  // Use Mutation for updating employees
+  const updateMutation = useMutation({
+    mutationFn: updateEmployees,
+    onSuccess: () => {
+      queryClient.invalidateQueries(['employees']); // Refetch employees after update
+      setIsEditing(false);
+    },
+  });
 
-  const handleDeleteRow = (index) => {
-    setRows((prevRows) => prevRows.filter((_, i) => i !== index));
-  };
+  // Use Mutation for deleting employees
+  const deleteMutation = useMutation({
+    mutationFn: deleteEmployee,
+    onSuccess: () => {
+      queryClient.invalidateQueries(['employees']); // Refetch employees after delete
+    },
+  });
 
-  const handleAddNewEmployee = () => {
-    setRows((prevRows) => [
-      ...prevRows,
-      { name: '', contractHours: 0 },
+  // Add a new employee (local only until saved)
+  const addNewEmployee = () => {
+    queryClient.setQueryData(['employees'], (old) => [
+      ...(old || []),
+      { id: null, name: '', contractHours: 0 },
     ]);
   };
+
+  // Save changes
+  const saveChanges = () => {
+    updateMutation.mutate(rows);
+  };
+
+  // Delete an employee
+  const handleDelete = (id) => {
+    deleteMutation.mutate(id);
+  };
+
+  // Handle cell edits
+  const handleChange = (index, field, value) => {
+    queryClient.setQueryData(['employees'], (old) =>
+      old.map((row, idx) =>
+        idx === index
+          ? {
+              ...row,
+              [field]: value,
+            }
+          : row
+      )
+    );
+  };
+
+  if (isLoading) {
+    return (
+      <Box sx={{ textAlign: 'center', mt: 4 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (isError) {
+    return <Box sx={{ textAlign: 'center', mt: 4 }}>Failed to load employees.</Box>;
+  }
 
   return (
     <>
@@ -54,15 +135,12 @@ export default function Employees() {
             <TableRow>
               <TableCell><strong>Name</strong></TableCell>
               <TableCell><strong>Contract Hours</strong></TableCell>
-              {isEditing && (
-                <TableCell><strong>Actions</strong></TableCell>
-              )}
+              {isEditing && <TableCell><strong>Actions</strong></TableCell>}
             </TableRow>
           </TableHead>
-
           <TableBody>
             {rows.map((employee, idx) => (
-              <TableRow key={idx}>
+              <TableRow key={employee.id || idx}>
                 <TableCell>
                   {isEditing ? (
                     <TextField
@@ -81,20 +159,19 @@ export default function Employees() {
                       variant="outlined"
                       size="small"
                       value={employee.contractHours}
-                      onChange={(e) => handleChange(idx, 'contractHours', e.target.value)}
+                      onChange={(e) => handleChange(idx, 'contractHours', parseInt(e.target.value, 10))}
                       type="number"
                     />
                   ) : (
                     employee.contractHours
                   )}
                 </TableCell>
-
                 {isEditing && (
                   <TableCell>
                     <Button
                       variant="contained"
                       color="error"
-                      onClick={() => handleDeleteRow(idx)}
+                      onClick={() => handleDelete(employee.id)}
                     >
                       Delete
                     </Button>
@@ -110,16 +187,17 @@ export default function Employees() {
         <Button
           variant="contained"
           color={isEditing ? 'success' : 'primary'}
-          onClick={handleToggleEdit}
+          onClick={isEditing ? saveChanges : () => setIsEditing(true)}
+          disabled={updateMutation.isLoading}
         >
           {isEditing ? 'Save' : 'Edit'}
         </Button>
 
         {isEditing && (
-          <Button 
-            variant="contained" 
+          <Button
+            variant="contained"
             sx={{ ml: 2 }}
-            onClick={handleAddNewEmployee}
+            onClick={addNewEmployee}
           >
             Add New Employee
           </Button>
