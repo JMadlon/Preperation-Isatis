@@ -7,11 +7,33 @@ namespace stagevoorbereiding_API.controllers
     [Route("/projects")]
     public class ProjectController : ControllerBase
     {
-        private readonly DataBaseContext _context;
+        private readonly ProjectsDAO _projectsDAO;
 
-        public ProjectController(DataBaseContext context)
+        public ProjectController(ProjectsDAO projectsDAO)
         {
-            _context = context;
+            _projectsDAO = projectsDAO;
+        }
+
+        [HttpGet]
+        public ActionResult<IEnumerable<ProjectDTO>> GetProjects()
+        {
+            return Ok(_projectsDAO.GetAllProjects());
+        }
+
+        [HttpPut]
+        public IActionResult UpdateProject(ProjectDTO project)
+        {
+            if (project == null || project.Id <= 0)
+            {
+                return BadRequest("Invalid project data.");
+            }
+
+            if (_projectsDAO.UpdateProject(project))
+            {
+                return NotFound($"Project with ID: {project.Id} not found.");
+            }
+
+            return NoContent();
         }
     }
 }

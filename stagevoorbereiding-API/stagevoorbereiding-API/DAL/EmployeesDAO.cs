@@ -34,7 +34,5 @@ namespace stagevoorbereiding_API.DAL
             _context.SaveChanges();
             return true;
         }
-
-
     }
 }
