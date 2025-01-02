@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("stagevoorbereiding-API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4a41f3911805df15dbc6e91319025f1c4950bb09")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+15473d2ea8b8ec526f9d7eeab0020275d5a9e960")]
 [assembly: System.Reflection.AssemblyProductAttribute("stagevoorbereiding-API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("stagevoorbereiding-API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

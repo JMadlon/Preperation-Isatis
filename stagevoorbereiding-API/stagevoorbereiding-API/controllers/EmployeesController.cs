@@ -19,5 +19,21 @@ namespace stagevoorbereiding_API.controllers
         {
             return Ok(_employeesService.GetAllEmployees());
         }
+
+        [HttpPut]
+        public IActionResult UpdateEmployee(EmployeeDTO employee)
+        {
+            if (employee == null || employee.Id <= 0)
+            {
+                return BadRequest("Invalid employee data.");
+            }
+
+            if (_employeesService.UpdateEmployee(employee))
+            {
+                return NotFound($"Employee with ID: {employee.Id} not found.");
+            }
+
+            return NoContent();
+        }
     }
 }
