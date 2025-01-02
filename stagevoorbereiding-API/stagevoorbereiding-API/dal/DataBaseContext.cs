@@ -4,7 +4,7 @@ namespace stagevoorbereiding_API.DAL
 {
     public class DataBaseContext : DbContext
     {
-        public DataBaseContext(DbContextOptions<DbContext> options) : base(options)
+        public DataBaseContext(DbContextOptions<DataBaseContext> options) : base(options)
         {
         }
         
