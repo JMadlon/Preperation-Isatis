@@ -15,7 +15,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 // Backend base URL
-const BACKEND_URL = 'http://localhost:5173';
+const BACKEND_URL = 'http://localhost:5174';
 
 // Fetch employees from the backend
 const fetchEmployees = async () => {
