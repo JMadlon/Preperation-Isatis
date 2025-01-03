@@ -15,7 +15,7 @@ import {
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 // Backend base URL
-const BACKEND_URL = 'http://localhost:5173'; // Replace with your backend URL if different
+const BACKEND_URL = 'http://localhost:5173';
 
 // Fetch employees from the backend
 const fetchEmployees = async () => {
@@ -35,11 +35,19 @@ const updateEmployees = async (employees) => {
     },
     body: JSON.stringify(employees),
   });
+
   if (!response.ok) {
     throw new Error('Failed to update employees');
   }
-  return response.json();
+
+  // Check if the response has a body (e.g., 204 No Content will not have one)
+  if (response.status === 204) {
+    return; // No content, so nothing to parse
+  }
+
+  return response.json(); // Parse JSON only if the response body exists
 };
+
 
 // Delete an employee in the backend
 const deleteEmployee = async (id) => {
@@ -71,7 +79,7 @@ export default function Employees() {
     mutationFn: updateEmployees,
     onSuccess: () => {
       queryClient.invalidateQueries(['employees']); // Refetch employees after update
-      setIsEditing(false);
+      setIsEditing(false); // Exit edit mode on successful save
     },
   });
 
@@ -87,19 +95,44 @@ export default function Employees() {
   const addNewEmployee = () => {
     queryClient.setQueryData(['employees'], (old) => [
       ...(old || []),
-      { id: null, name: '', contractHours: 0 },
+      {
+        id: `temp-${Date.now()}-${Math.random()}`, // Unique temporary ID
+        name: '',
+        contractHours: 0,
+      },
     ]);
-  };
+  };  
 
   // Save changes
-  const saveChanges = () => {
-    updateMutation.mutate(rows);
+  const saveChanges = async () => {
+    try {
+      const employeesToSave = rows.map(({ id, ...rest }) =>
+        id && id > 0 ? { id, ...rest } : { ...rest }
+      );
+
+      await updateMutation.mutateAsync(employeesToSave); // Wait for save to complete
+    } catch (error) {
+      console.error('Error saving employees:', error);
+    }
   };
 
   // Delete an employee
-  const handleDelete = (id) => {
-    deleteMutation.mutate(id);
+  const handleDelete = (index) => {
+    const employeeToDelete = rows[index];
+  
+    // Check if the ID is a temporary ID
+    if (employeeToDelete.id && String(employeeToDelete.id).startsWith('temp-')) {
+      queryClient.setQueryData(['employees'], (old) =>
+        old.filter((_, idx) => idx !== index)
+      );
+      return; // Exit without making a backend request
+    }
+  
+    // If it's a valid database ID, send a DELETE request to the backend
+    deleteMutation.mutate(employeeToDelete.id);
   };
+  
+  
 
   // Handle cell edits
   const handleChange = (index, field, value) => {
@@ -140,7 +173,7 @@ export default function Employees() {
           </TableHead>
           <TableBody>
             {rows.map((employee, idx) => (
-              <TableRow key={employee.id || idx}>
+              <TableRow key={employee.id || `new-${idx}-${Date.now()}`}>
                 <TableCell>
                   {isEditing ? (
                     <TextField
@@ -171,7 +204,7 @@ export default function Employees() {
                     <Button
                       variant="contained"
                       color="error"
-                      onClick={() => handleDelete(employee.id)}
+                      onClick={() => handleDelete(idx)}
                     >
                       Delete
                     </Button>
@@ -190,7 +223,7 @@ export default function Employees() {
           onClick={isEditing ? saveChanges : () => setIsEditing(true)}
           disabled={updateMutation.isLoading}
         >
-          {isEditing ? 'Save' : 'Edit'}
+          {isEditing ? (updateMutation.isLoading ? <CircularProgress size={20} /> : 'Save') : 'Edit'}
         </Button>
 
         {isEditing && (

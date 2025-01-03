@@ -5,8 +5,8 @@ public class MappingProfile : Profile
 {
     public MappingProfile()
     {
-        CreateMap<EmployeeEntity, EmployeeDTO>();
-        CreateMap<ProjectEntity, ProjectDTO>();
+        CreateMap<EmployeeEntity, EmployeeDTO>().ReverseMap();
+        CreateMap<ProjectEntity, ProjectDTO>().ReverseMap(); 
 
         CreateMap<EmployeeProjectPlanningEntity, EmployeeProjectDTO>()
             .ForMember(dest => dest.EmployeeId, opt => opt.MapFrom(src => src.EmployeeId))

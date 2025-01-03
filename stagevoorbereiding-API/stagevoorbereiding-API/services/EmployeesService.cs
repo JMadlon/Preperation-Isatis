@@ -22,5 +22,17 @@ namespace stagevoorbereiding_API.services
         {
             return _employeesDAO.UpdateEmployee(employee);
         }
+
+        public bool DeleteEmployee(int id)
+        {
+            return _employeesDAO.DeleteEmployee(id);
+        }
+
+        public bool AddEmployee(EmployeeDTO employee)
+        {
+            return _employeesDAO.AddEmployee(employee);
+        }
+
+
     }
 }

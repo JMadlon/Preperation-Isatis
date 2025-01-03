@@ -21,19 +21,56 @@ namespace stagevoorbereiding_API.controllers
         }
 
         [HttpPut]
-        public IActionResult UpdateEmployee(EmployeeDTO employee)
+        public IActionResult UpdateEmployees(List<EmployeeDTO> employees)
         {
-            if (employee == null || employee.Id <= 0)
+            if (employees == null || !employees.Any())
             {
-                return BadRequest("Invalid employee data.");
+                return BadRequest("No employee data provided.");
             }
 
-            if (_employeesService.UpdateEmployee(employee))
+            foreach (var employee in employees)
             {
-                return NotFound($"Employee with ID: {employee.Id} not found.");
+                if (string.IsNullOrEmpty(employee.Name) || employee.ContractHours <= 0)
+                {
+                    return BadRequest($"Invalid data for employee: {employee.Name ?? "Unnamed"}");
+                }
+
+                if (employee.Id == 0)
+                {
+                    _employeesService.AddEmployee(employee);
+                }
+                else
+                {
+                    var updateResult = _employeesService.UpdateEmployee(employee);
+
+                    if (!updateResult)
+                    {
+                        return NotFound($"Employee with ID: {employee.Id} not found.");
+                    }
+                }
             }
 
             return NoContent();
         }
+
+
+        [HttpDelete("{id}")]
+        public IActionResult DeleteEmployee(int id)
+        {
+            if (id <= 0)
+            {
+                return BadRequest("Invalid employee ID.");
+            }
+
+            bool isDeleted = _employeesService.DeleteEmployee(id);
+
+            if (!isDeleted)
+            {
+                return NotFound($"Employee with ID {id} not found.");
+            }
+
+            return NoContent();
+        }
+        
     }
 }

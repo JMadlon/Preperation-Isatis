@@ -34,5 +34,40 @@ namespace stagevoorbereiding_API.DAL
             _context.SaveChanges();
             return true;
         }
+
+        public bool DeleteEmployee(int id)
+        {
+            var employee = _context.Employees.FirstOrDefault(e => e.Id == id);
+            if (employee == null)
+            {
+                return false;
+            }
+
+            _context.Employees.Remove(employee);
+            _context.SaveChanges();
+            return true;
+        }
+
+        public bool AddEmployee(EmployeeDTO employee)
+        {
+            try
+            {
+                // var newEmployee = new EmployeeEntity
+                // {
+                //     Name = employee.Name,
+                //     ContractHours = employee.ContractHours
+                // };
+
+                _context.Employees.Add(_mapper.Map<EmployeeEntity>(employee));
+                _context.SaveChanges();
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+
     }
 }
