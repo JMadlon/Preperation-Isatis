@@ -22,17 +22,39 @@ namespace stagevoorbereiding_API.DAL
 
         public bool UpdateProject(ProjectDTO project)
         {
-            ProjectEntity? existingProject = _context.Projects.FirstOrDefault(p => p.Id == project.Id);
-
-            if (existingProject == null)
+            var entity = _context.Projects.FirstOrDefault(p => p.Id == project.Id);
+            if (entity == null)
             {
                 return false;
             }
 
-            _mapper.Map(project, existingProject);
-
+            _mapper.Map(project, entity);
             _context.SaveChanges();
             return true;
         }
+
+        public ProjectDTO AddProject(ProjectDTO project)
+        {
+            var projectEntity = _mapper.Map<ProjectEntity>(project);
+
+            _context.Projects.Add(projectEntity);
+            _context.SaveChanges();
+
+            return _mapper.Map<ProjectDTO>(projectEntity);
+        }
+
+        public bool DeleteProject(int id)
+        {
+            var project = _context.Projects.FirstOrDefault(p => p.Id == id);
+            if (project == null)
+            {
+                return false;
+            }
+
+            _context.Projects.Remove(project);
+            _context.SaveChanges();
+            return true;
+        }
+
     }
 }

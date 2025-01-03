@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using stagevoorbereiding_API.DAL;
+using stagevoorbereiding_API.services;
 
 namespace stagevoorbereiding_API.controllers
 {
@@ -7,33 +8,69 @@ namespace stagevoorbereiding_API.controllers
     [Route("/projects")]
     public class ProjectController : ControllerBase
     {
-        private readonly ProjectsDAO _projectsDAO;
+        private readonly ProjectsService _projectsService;
 
-        public ProjectController(ProjectsDAO projectsDAO)
+        public ProjectController(ProjectsService projectsService)
         {
-            _projectsDAO = projectsDAO;
+            _projectsService = projectsService;
         }
 
         [HttpGet]
         public ActionResult<IEnumerable<ProjectDTO>> GetProjects()
         {
-            return Ok(_projectsDAO.GetAllProjects());
+            return Ok(_projectsService.GetAllProjects());
         }
 
         [HttpPut]
-        public IActionResult UpdateProject(ProjectDTO project)
+        public IActionResult UpdateProjects(List<ProjectDTO> projects)
         {
-            if (project == null || project.Id <= 0)
+            if (projects == null || !projects.Any())
             {
-                return BadRequest("Invalid project data.");
+                return BadRequest("No project data provided.");
             }
 
-            if (_projectsDAO.UpdateProject(project))
+            foreach (var project in projects)
             {
-                return NotFound($"Project with ID: {project.Id} not found.");
+                if (string.IsNullOrEmpty(project.Name) || project.Id < 0)
+                {
+                    return BadRequest($"Invalid data for project with ID: {project.Id}");
+                }
+
+                if (project.Id == 0)
+                {
+                    _projectsService.AddProject(project);
+                }
+                else
+                {
+                    var updateResult = _projectsService.UpdateProject(project);
+                    if (!updateResult)
+                    {
+                        return NotFound($"Project with ID: {project.Id} not found.");
+                    }
+                }
             }
 
             return NoContent();
         }
+
+        [HttpDelete("{id}")]
+        public IActionResult DeleteProject(int id)
+        {
+            if (id <= 0)
+            {
+                return BadRequest("Invalid project ID.");
+            }
+
+            var deleteResult = _projectsService.DeleteProject(id);
+
+            if (!deleteResult)
+            {
+                return NotFound($"Project with ID: {id} not found.");
+            }
+
+            return NoContent(); // Successfully deleted
+        }
+
+
     }
 }

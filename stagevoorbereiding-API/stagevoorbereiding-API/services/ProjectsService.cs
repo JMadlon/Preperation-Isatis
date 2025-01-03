@@ -20,5 +20,20 @@ namespace stagevoorbereiding_API.services
         {
             return _projectsDAO.UpdateProject(project);
         }
+
+        public ProjectDTO AddProject(ProjectDTO project)
+        {
+            if (project == null || string.IsNullOrWhiteSpace(project.Name))
+            {
+                throw new ArgumentException("Invalid project data.");
+            }
+
+            return _projectsDAO.AddProject(project);
+        }
+
+        public bool DeleteProject(int id)
+        {
+            return _projectsDAO.DeleteProject(id);
+        }
     }
 }
