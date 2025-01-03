@@ -5,7 +5,7 @@
 namespace stagevoorbereiding_API.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialDb : Migration
+    public partial class SimpleDatabase : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -25,26 +25,12 @@ namespace stagevoorbereiding_API.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Planning",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Week = table.Column<int>(type: "int", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Planning", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Projects",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -52,33 +38,27 @@ namespace stagevoorbereiding_API.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "EmployeeProjectPlannings",
+                name: "Planning",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
+                    Week = table.Column<int>(type: "int", nullable: false),
+                    Hours = table.Column<int>(type: "int", nullable: false),
                     EmployeeId = table.Column<int>(type: "int", nullable: false),
-                    ProjectId = table.Column<int>(type: "int", nullable: false),
-                    PlanningId = table.Column<int>(type: "int", nullable: false),
-                    Hours = table.Column<int>(type: "int", nullable: false)
+                    ProjectId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_EmployeeProjectPlannings", x => x.Id);
+                    table.PrimaryKey("PK_Planning", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_EmployeeProjectPlannings_Employees_EmployeeId",
+                        name: "FK_Planning_Employees_EmployeeId",
                         column: x => x.EmployeeId,
                         principalTable: "Employees",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_EmployeeProjectPlannings_Planning_PlanningId",
-                        column: x => x.PlanningId,
-                        principalTable: "Planning",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_EmployeeProjectPlannings_Projects_ProjectId",
+                        name: "FK_Planning_Projects_ProjectId",
                         column: x => x.ProjectId,
                         principalTable: "Projects",
                         principalColumn: "Id",
@@ -86,18 +66,13 @@ namespace stagevoorbereiding_API.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_EmployeeProjectPlannings_EmployeeId",
-                table: "EmployeeProjectPlannings",
+                name: "IX_Planning_EmployeeId",
+                table: "Planning",
                 column: "EmployeeId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_EmployeeProjectPlannings_PlanningId",
-                table: "EmployeeProjectPlannings",
-                column: "PlanningId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_EmployeeProjectPlannings_ProjectId",
-                table: "EmployeeProjectPlannings",
+                name: "IX_Planning_ProjectId",
+                table: "Planning",
                 column: "ProjectId");
         }
 
@@ -105,13 +80,10 @@ namespace stagevoorbereiding_API.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "EmployeeProjectPlannings");
+                name: "Planning");
 
             migrationBuilder.DropTable(
                 name: "Employees");
-
-            migrationBuilder.DropTable(
-                name: "Planning");
 
             migrationBuilder.DropTable(
                 name: "Projects");

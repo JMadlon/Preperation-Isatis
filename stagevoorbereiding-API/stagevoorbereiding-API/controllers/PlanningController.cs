@@ -1,54 +1,53 @@
 using Microsoft.AspNetCore.Mvc;
-using stagevoorbereiding_API.DAL;
 using stagevoorbereiding_API.services;
 
-namespace stagevoorbereiding_API.controllers
+namespace stagevoorbereiding_API.Controllers
 {
     [ApiController]
     [Route("/planning")]
     public class PlanningController : ControllerBase
     {
-                private readonly PlanningService _PlanningService;
+        private readonly PlanningService _planningService;
 
         public PlanningController(PlanningService planningService)
         {
-            _PlanningService = planningService;
+            _planningService = planningService;
         }
 
         [HttpGet]
-        [Route("/{weekNumber}")]
-        public ActionResult<IEnumerable<PlanningDTO>> GetPlanningForWeek([FromQuery] int weekNumber)
+        [Route("{weekNumber}")]
+        public ActionResult<IEnumerable<PlanningDTO>> GetPlanningForWeek(int weekNumber)
         {
             if (weekNumber < 1 || weekNumber > 52)
             {
                 return BadRequest("Invalid week number. Please provide a value between 1 and 52.");
             }
 
-           PlanningDTO planningForWeek = _PlanningService.GetPlanningForWeek(weekNumber);
+            var planningRows = _planningService.GetPlanningForWeek(weekNumber);
 
-            if (planningForWeek == null)
-            {
-                return NotFound($"No planning data found for week {weekNumber}.");
-            }
-
-            return Ok(planningForWeek);
+            return Ok(planningRows);
         }
 
-
         [HttpPut]
-        public IActionResult UpdatePlanning(PlanningDTO planning)
+        public IActionResult SavePlanning([FromBody] List<PlanningDTO> planningDtos)
         {
-            if (planning == null || planning.Id <= 0)
+            try
             {
-                return BadRequest("Invalid planning data.");
+                _planningService.SavePlanning(planningDtos);
+                return Ok(new { message = "Planning saved successfully" });
             }
-
-            if(_PlanningService.UpdatePlanning(planning))
+            catch (ArgumentException ex)
             {
-                return NotFound($"Planning with ID: {planning.Id} not found.");
+                return BadRequest(ex.Message);
             }
-
-            return NoContent();
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
         }
     }
 }

@@ -1,26 +1,43 @@
-
 using AutoMapper;
 using stagevoorbereiding_API.DAL;
+using stagevoorbereiding_API.Entities;
 
 namespace stagevoorbereiding_API.services
 {
     public class PlanningService
     {
-         private readonly PlanningDAO _PlanningDAO;
+        private readonly PlanningDAO _planningDAO;
         private readonly IMapper _mapper;
 
-        public PlanningService(PlanningDAO planningDAO, IMapper mapper){
-            _PlanningDAO = planningDAO;
+        public PlanningService(PlanningDAO planningDAO, IMapper mapper)
+        {
+            _planningDAO = planningDAO;
             _mapper = mapper;
         }
-        public PlanningDTO GetPlanningForWeek(int weekNumber)
+
+        public List<PlanningDTO> GetPlanningForWeek(int weekNumber)
         {
-            return _PlanningDAO.GetPlanningForWeek(weekNumber);
+            return _planningDAO.GetPlanningForWeek(weekNumber);
         }
 
-        public bool UpdatePlanning(PlanningDTO planning)
+        public void SavePlanning(List<PlanningDTO> planningDtos)
         {
-            return _PlanningDAO.UpdatePlanning(planning);
+            foreach (var dto in planningDtos)
+            {
+                if (dto.Id == 0)
+                {
+                    var newEntity = _mapper.Map<PlanningEntity>(planningDtos);
+
+                    _planningDAO.AddPlanning(newEntity, dto.Employee.Id, dto.Project.Id);
+                }
+                else
+                {
+                    var updatedEntity = _mapper.Map<PlanningEntity>(dto);
+
+                    _planningDAO.UpdatePlanning(updatedEntity, dto.Employee.Id, dto.Project.Id);
+                }
+            }
         }
+
     }
 }

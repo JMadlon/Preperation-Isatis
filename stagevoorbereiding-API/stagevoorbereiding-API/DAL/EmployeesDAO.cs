@@ -52,12 +52,6 @@ namespace stagevoorbereiding_API.DAL
         {
             try
             {
-                // var newEmployee = new EmployeeEntity
-                // {
-                //     Name = employee.Name,
-                //     ContractHours = employee.ContractHours
-                // };
-
                 _context.Employees.Add(_mapper.Map<EmployeeEntity>(employee));
                 _context.SaveChanges();
                 return true;

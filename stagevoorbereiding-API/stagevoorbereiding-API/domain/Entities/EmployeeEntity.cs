@@ -7,7 +7,7 @@ namespace stagevoorbereiding_API.Entities
         public int Id { get; set; }
         public string Name { get; set; }
         public int ContractHours { get; set; }
-
-        public ICollection<EmployeeProjectPlanningEntity> EmployeeProjectPlannings { get; set; } = new List<EmployeeProjectPlanningEntity>();
+        
+        public ICollection<PlanningEntity> Plannings { get; set; } = new List<PlanningEntity>();
     }
 }

@@ -1,4 +1,3 @@
-
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using stagevoorbereiding_API.Entities;
@@ -8,46 +7,64 @@ namespace stagevoorbereiding_API.DAL
     public class PlanningDAO
     {
         private readonly DataBaseContext _context;
-        private IMapper _mapper;
+        private readonly IMapper _mapper;
 
         public PlanningDAO(DataBaseContext context, IMapper mapper)
         {
-            this._context = context;
-            this._mapper = mapper;
+            _context = context;
+            _mapper = mapper;
         }
 
-        public PlanningDTO GetPlanningForWeek(int weekNumber)
+        public List<PlanningDTO> GetPlanningForWeek(int weekNumber)
         {
-            var planning = _context.Planning
-                .Include(p => p.EmployeeProjectPlannings)
-                    .ThenInclude(epp => epp.Employee)
-                .Include(p => p.EmployeeProjectPlannings)
-                    .ThenInclude(epp => epp.Project) 
-                .FirstOrDefault(p => p.Week == weekNumber);
+            var planningData = _context.Planning
+                .Include(p => p.Employee)
+                .Include(p => p.Project)
+                .Where(p => p.Week == weekNumber)
+                .ToList();
 
-            if (planning == null)
-            {
-                throw new KeyNotFoundException($"No planning data found for week {weekNumber}.");
-            }
-
-            return _mapper.Map<PlanningDTO>(planning);
-}
-
-
-
-        public bool UpdatePlanning(PlanningDTO planning)
-        {
-            PlanningEntity? existingPlanning = _context.Planning.FirstOrDefault(p => p.Id == planning.Id);
-
-            if (existingPlanning == null)
-            {
-                return false;
-            }
-
-            _mapper.Map(planning, existingPlanning);
-
-            _context.SaveChanges();
-            return true;
+            return _mapper.Map<List<PlanningDTO>>(planningData);
         }
+
+        public void AddPlanning(PlanningEntity newEntity, int employeeId, int projectId)
+        {
+            newEntity.Employee = _context.Employees.FirstOrDefault(e => e.Id == employeeId);
+            newEntity.Project = _context.Projects.FirstOrDefault(p => p.Id == projectId);
+
+            if (newEntity.Employee == null || newEntity.Project == null)
+            {
+                throw new ArgumentException("Invalid Employee or Project Id");
+            }
+
+            _context.Planning.Add(newEntity);
+        }
+
+            public void UpdatePlanning(PlanningEntity updatedEntity, int employeeId, int projectId)
+            {
+                var existingEntity = _context.Planning
+                    .Include(p => p.Employee)
+                    .Include(p => p.Project)
+                    .FirstOrDefault(p => p.Id == updatedEntity.Id);
+
+                if (existingEntity == null)
+                {
+                    throw new KeyNotFoundException($"Planning entry with Id {updatedEntity.Id} not found.");
+                }
+
+                // Update fields
+                existingEntity.Hours = updatedEntity.Hours;
+                existingEntity.Week = updatedEntity.Week;
+
+                // Re-assign Employee and Project if changed
+                existingEntity.Employee = _context.Employees.FirstOrDefault(e => e.Id == employeeId);
+                existingEntity.Project = _context.Projects.FirstOrDefault(p => p.Id == projectId);
+
+                if (existingEntity.Employee == null || existingEntity.Project == null)
+                {
+                    throw new ArgumentException("Invalid Employee or Project Id");
+                }
+
+                _context.SaveChanges();
+            }
     }
 }
