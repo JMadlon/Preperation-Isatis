@@ -22,22 +22,43 @@ namespace stagevoorbereiding_API.services
 
         public void SavePlanning(List<PlanningDTO> planningDtos)
         {
-            foreach (var dto in planningDtos)
+            foreach (PlanningDTO dto in planningDtos)
             {
+                if(!ValidateHours(dto)){
+                    throw new ArgumentException($"Total planned hours for the week exceed the maximum contract hours of {dto.Employee.Name}.");
+                }
+
                 if (dto.Id == 0)
                 {
-                    var newEntity = _mapper.Map<PlanningEntity>(planningDtos);
+                    PlanningEntity newEntity = _mapper.Map<PlanningEntity>(dto);
 
                     _planningDAO.AddPlanning(newEntity, dto.Employee.Id, dto.Project.Id);
                 }
                 else
                 {
-                    var updatedEntity = _mapper.Map<PlanningEntity>(dto);
+                    PlanningEntity updatedEntity = _mapper.Map<PlanningEntity>(dto);
 
                     _planningDAO.UpdatePlanning(updatedEntity, dto.Employee.Id, dto.Project.Id);
                 }
             }
         }
 
+        public bool DeletePlanning(int id)
+        {
+            return _planningDAO.DeletePlanning(id);
+        }
+        
+        private bool ValidateHours(PlanningDTO dto)
+        {
+            List<PlanningDTO> weeklyPlanning = _planningDAO.GetPlanningForWeek(dto.Week);
+
+            int totalPlannedHours = weeklyPlanning
+                .Where(p => p.Employee.Id == dto.Employee.Id && p.Id != dto.Id)
+                .Sum(p => p.Hours);
+
+            totalPlannedHours += dto.Hours;
+
+            return totalPlannedHours <= dto.Employee.ContractHours;
+        }
     }
 }

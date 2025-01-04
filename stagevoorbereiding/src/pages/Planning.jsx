@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Table,
   TableBody,
@@ -11,17 +11,16 @@ import {
   TextField,
   Box,
   CircularProgress,
-  MenuItem,
   Select,
-} from '@mui/material';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+  MenuItem,
+} from "@mui/material";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 // Backend base URL
-const BACKEND_URL = 'http://localhost:5174';
+const BACKEND_URL = "http://localhost:5174";
 
 // Fetch planning data for a given week
-const fetchPlanning = async ({ queryKey }) => {
-  const [, weekNumber] = queryKey;
+const fetchPlanning = async (weekNumber) => {
   const response = await fetch(`${BACKEND_URL}/planning/${weekNumber}`);
   if (!response.ok) {
     throw new Error(`Failed to fetch planning for week ${weekNumber}`);
@@ -29,182 +28,190 @@ const fetchPlanning = async ({ queryKey }) => {
   return response.json();
 };
 
-// Fetch employees
+// Fetch employees and projects
 const fetchEmployees = async () => {
   const response = await fetch(`${BACKEND_URL}/employees`);
   if (!response.ok) {
-    throw new Error('Failed to fetch employees');
+    throw new Error("Failed to fetch employees");
   }
   return response.json();
 };
 
-// Fetch projects
 const fetchProjects = async () => {
   const response = await fetch(`${BACKEND_URL}/projects`);
   if (!response.ok) {
-    throw new Error('Failed to fetch projects');
+    throw new Error("Failed to fetch projects");
   }
   return response.json();
 };
 
-// Save planning data
-const savePlanningData = async (planning) => {
+// Update planning data
+const updatePlanning = async (planning) => {
   const response = await fetch(`${BACKEND_URL}/planning`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify(planning),
   });
   if (!response.ok) {
-    throw new Error('Failed to save planning data');
+    throw new Error("Failed to update planning");
   }
-
-  // Check if the response has a body before parsing
-  const text = await response.text();
-  return text ? JSON.parse(text) : {};
+  return response.json();
 };
 
+// Delete a planning row
+const deletePlanning = async (id) => {
+  const response = await fetch(`${BACKEND_URL}/planning/${id}`, {
+    method: "DELETE",
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to delete planning with id ${id}`);
+  }
+  return id;
+};
 
 export default function Planning() {
   const queryClient = useQueryClient();
   const [weekNumber, setWeekNumber] = useState(1);
   const [isEditing, setIsEditing] = useState(false);
 
-  // Queries
-  const { data: planning = [], isLoading: isLoadingPlanning, isError: isErrorPlanning } = useQuery({
-    queryKey: ['planning', weekNumber],
-    queryFn: fetchPlanning,
+  // Fetch planning, employees, and projects
+  const { data: rows = [], isLoading, isError } = useQuery({
+    queryKey: ["planning", weekNumber],
+    queryFn: () => fetchPlanning(weekNumber),
   });
 
-  const { data: employees = [], isLoading: isLoadingEmployees, isError: isErrorEmployees } = useQuery({
-    queryKey: ['employees'],
+  const { data: employees = [] } = useQuery({
+    queryKey: ["employees"],
     queryFn: fetchEmployees,
   });
 
-  const { data: projects = [], isLoading: isLoadingProjects, isError: isErrorProjects } = useQuery({
-    queryKey: ['projects'],
+  const { data: projects = [] } = useQuery({
+    queryKey: ["projects"],
     queryFn: fetchProjects,
   });
 
-  // Mutation
-  const saveMutation = useMutation({
-    mutationFn: savePlanningData,
+  const updateMutation = useMutation({
+    mutationFn: updatePlanning,
     onSuccess: () => {
-      queryClient.invalidateQueries(['planning', weekNumber]);
+      queryClient.invalidateQueries(["planning", weekNumber]);
       setIsEditing(false);
-    },
-    onError: (error) => {
-      console.error('Error saving planning:', error);
     },
   });
 
-  // Handlers
-  const handleSave = () => {
-    const transformedPlanning = planning.map((item) => ({
-      id: item.id.toString().startsWith('temp') ? 0 : item.id, // Set id to 0 for new rows
-      week: weekNumber,
-      hours: item.hours,
-      employee: item.employee, // Full employee object
-      project: item.project,   // Full project object
-    }));
-  
-    console.log('Saving payload:', JSON.stringify(transformedPlanning));
-  
-    saveMutation.mutate(transformedPlanning, {
-      onSuccess: (data) => {
-        console.log('Save success:', data);
-      },
-      onError: (error) => {
-        console.error('Error saving planning:', error);
-      },
-    });
-  };
-  
+  const deleteMutation = useMutation({
+    mutationFn: deletePlanning,
+    onSuccess: () => {
+      queryClient.invalidateQueries(["planning", weekNumber]);
+    },
+  });
 
-  const handleAddRow = () => {
-    queryClient.setQueryData(['planning', weekNumber], (old) => [
-      ...(old || []),
-      {
-        id: `temp-${Date.now()}`,
-        week: weekNumber,
-        hours: 0,
-        employee: { id: '', name: '', contractHours: 0 },
-        project: { id: '', name: '', description: '' },
-      },
-    ]);
+  const saveChanges = async () => {
+    try {
+      await updateMutation.mutateAsync(rows);
+    } catch (error) {
+      console.error("Error saving planning:", error);
+    }
   };
 
-  const handleEditField = (index, field, value, subField = null) => {
-    queryClient.setQueryData(['planning', weekNumber], (old) =>
-      old.map((item, idx) =>
+  const handleDelete = (id, index) => {
+    if (String(id).startsWith("0")) {
+      queryClient.setQueryData(["planning", weekNumber], (old) =>
+        old.filter((_, idx) => idx !== index)
+      );
+    } else {
+      deleteMutation.mutate(id);
+    }
+  };
+
+  const handleChange = (index, field, value) => {
+    queryClient.setQueryData(["planning", weekNumber], (old) =>
+      old.map((row, idx) =>
         idx === index
           ? {
-              ...item,
-              [field]: subField
-                ? { ...item[field], [subField]: value }
-                : value,
+              ...row,
+              [field]: value,
             }
-          : item
+          : row
       )
     );
   };
 
-  const goToPreviousWeek = () => !isEditing && setWeekNumber((prev) => Math.max(prev - 1, 1));
-  const goToNextWeek = () => !isEditing && setWeekNumber((prev) => Math.min(prev + 1, 52));
+  const addNewRow = () => {
+    queryClient.setQueryData(["planning", weekNumber], (old) => [
+      ...(old || []),
+      {
+        id: 0,
+        week: weekNumber,
+        hours: 0,
+        employee: { id: null, name: "" },
+        project: { id: null, name: "" },
+      },
+    ]);
+  };
 
-  // Loading and Error States
-  if (isLoadingPlanning || isLoadingEmployees || isLoadingProjects) {
+  if (isLoading) {
     return (
-      <Box sx={{ textAlign: 'center', mt: 4 }}>
+      <Box sx={{ textAlign: "center", mt: 4 }}>
         <CircularProgress />
       </Box>
     );
   }
 
-  if (isErrorPlanning || isErrorEmployees || isErrorProjects) {
+  if (isError) {
     return (
-      <Box sx={{ textAlign: 'center', mt: 4 }}>
-        Failed to load data.
+      <Box sx={{ textAlign: "center", mt: 4 }}>
+        Failed to load planning data for week {weekNumber}.
       </Box>
     );
   }
 
-  // Rendering
   return (
     <>
-      <Box sx={{ textAlign: 'center', mt: 2 }}>
-        <Button onClick={goToPreviousWeek} variant="contained" disabled={isEditing}>
+      <Box sx={{ textAlign: "center", mt: 2 }}>
+        <Button
+          onClick={() => setWeekNumber((prev) => Math.max(prev - 1, 1))}
+          variant="contained"
+          disabled={isEditing}
+        >
           Previous Week
         </Button>
         <TextField
           variant="outlined"
           size="small"
           value={weekNumber}
-          inputProps={{ readOnly: true, style: { textAlign: 'center' } }}
+          inputProps={{ readOnly: true, style: { textAlign: "center" } }}
           sx={{ mx: 2, width: 100 }}
         />
-        <Button onClick={goToNextWeek} variant="contained" disabled={isEditing}>
+        <Button
+          onClick={() => setWeekNumber((prev) => Math.min(prev + 1, 52))}
+          variant="contained"
+          disabled={isEditing}
+        >
           Next Week
         </Button>
       </Box>
 
-      <TableContainer component={Paper} sx={{ maxWidth: 800, margin: '0 auto', mt: 2 }}>
+      <TableContainer component={Paper} sx={{ maxWidth: 800, margin: "0 auto", mt: 2 }}>
         <Table>
           <TableHead>
             <TableRow>
               <TableCell><strong>Project</strong></TableCell>
               <TableCell><strong>Employee</strong></TableCell>
-              <TableCell><strong>Assigned Hours</strong></TableCell>
+              <TableCell><strong>Hours</strong></TableCell>
+              {isEditing && <TableCell><strong>Actions</strong></TableCell>}
             </TableRow>
           </TableHead>
           <TableBody>
-            {planning.map((entry, idx) => (
+            {rows.map((entry, idx) => (
               <TableRow key={entry.id || `temp-${idx}`}>
                 <TableCell>
                   {isEditing ? (
                     <Select
-                      value={entry.project.id || ''}
+                      value={entry.project?.id || ""}
                       onChange={(e) =>
-                        handleEditField(idx, 'project', projects.find((p) => p.id === e.target.value))
+                        handleChange(idx, "project", projects.find((p) => p.id === parseInt(e.target.value, 10)))
                       }
                       displayEmpty
                     >
@@ -215,16 +222,19 @@ export default function Planning() {
                       ))}
                     </Select>
                   ) : (
-                    entry.project.name
+                    entry.project?.name || "N/A"
                   )}
                 </TableCell>
                 <TableCell>
                   {isEditing ? (
                     <Select
-                      value={entry.employee.id || ''}
-                      onChange={(e) =>
-                        handleEditField(idx, 'employee', employees.find((emp) => emp.id === e.target.value))
-                      }
+                      value={entry.employee?.id || ""}
+                      onChange={(e) => {
+                        const selectedEmployee = employees.find((emp) => emp.id === parseInt(e.target.value, 10));
+                        if (selectedEmployee) {
+                          handleChange(idx, "employee", selectedEmployee);
+                        }
+                      }}
                       displayEmpty
                     >
                       {employees.map((employee) => (
@@ -234,7 +244,7 @@ export default function Planning() {
                       ))}
                     </Select>
                   ) : (
-                    entry.employee.name
+                    entry.employee?.name || "N/A"
                   )}
                 </TableCell>
                 <TableCell>
@@ -244,7 +254,7 @@ export default function Planning() {
                       size="small"
                       value={entry.hours}
                       onChange={(e) =>
-                        handleEditField(idx, 'hours', parseInt(e.target.value, 10))
+                        handleChange(idx, "hours", parseInt(e.target.value, 10))
                       }
                       type="number"
                     />
@@ -252,22 +262,33 @@ export default function Planning() {
                     entry.hours
                   )}
                 </TableCell>
+                {isEditing && (
+                  <TableCell>
+                    <Button
+                      variant="contained"
+                      color="error"
+                      onClick={() => handleDelete(entry.id, idx)}
+                    >
+                      Delete
+                    </Button>
+                  </TableCell>
+                )}
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </TableContainer>
 
-      <Box sx={{ textAlign: 'center', mt: 2 }}>
+      <Box sx={{ textAlign: "center", mt: 2 }}>
         <Button
           variant="contained"
-          color={isEditing ? 'success' : 'primary'}
-          onClick={isEditing ? handleSave : () => setIsEditing(true)}
+          color={isEditing ? "success" : "primary"}
+          onClick={isEditing ? saveChanges : () => setIsEditing(true)}
         >
-          {isEditing ? 'Save' : 'Edit'}
+          {isEditing ? "Save" : "Edit"}
         </Button>
         {isEditing && (
-          <Button variant="contained" sx={{ ml: 2 }} onClick={handleAddRow}>
+          <Button variant="contained" sx={{ ml: 2 }} onClick={addNewRow}>
             Add New Row
           </Button>
         )}

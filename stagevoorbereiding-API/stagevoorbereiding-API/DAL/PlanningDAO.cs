@@ -37,34 +37,52 @@ namespace stagevoorbereiding_API.DAL
             }
 
             _context.Planning.Add(newEntity);
+            _context.SaveChanges();
         }
 
-            public void UpdatePlanning(PlanningEntity updatedEntity, int employeeId, int projectId)
+        public void UpdatePlanning(PlanningEntity updatedEntity, int employeeId, int projectId)
+        {
+            PlanningEntity? existingEntity = _context.Planning
+                .Include(p => p.Employee)
+                .Include(p => p.Project)
+                .FirstOrDefault(p => p.Id == updatedEntity.Id);
+
+            if (existingEntity == null)
             {
-                var existingEntity = _context.Planning
-                    .Include(p => p.Employee)
-                    .Include(p => p.Project)
-                    .FirstOrDefault(p => p.Id == updatedEntity.Id);
-
-                if (existingEntity == null)
-                {
-                    throw new KeyNotFoundException($"Planning entry with Id {updatedEntity.Id} not found.");
-                }
-
-                // Update fields
-                existingEntity.Hours = updatedEntity.Hours;
-                existingEntity.Week = updatedEntity.Week;
-
-                // Re-assign Employee and Project if changed
-                existingEntity.Employee = _context.Employees.FirstOrDefault(e => e.Id == employeeId);
-                existingEntity.Project = _context.Projects.FirstOrDefault(p => p.Id == projectId);
-
-                if (existingEntity.Employee == null || existingEntity.Project == null)
-                {
-                    throw new ArgumentException("Invalid Employee or Project Id");
-                }
-
-                _context.SaveChanges();
+                throw new KeyNotFoundException($"Planning entry with Id {updatedEntity.Id} not found.");
             }
+
+            existingEntity.Hours = updatedEntity.Hours;
+            existingEntity.Week = updatedEntity.Week;
+
+            existingEntity.Employee = _context.Employees.FirstOrDefault(e => e.Id == employeeId);
+            existingEntity.Project = _context.Projects.FirstOrDefault(p => p.Id == projectId);
+
+            if (existingEntity.Employee == null || existingEntity.Project == null)
+            {
+                throw new ArgumentException("Invalid Employee or Project Id");
+            }
+
+            _context.SaveChanges();
+        }
+
+         public bool DeletePlanning(int id)
+        {
+            PlanningEntity? planning = _context.Planning
+                .Include(p => p.Employee)
+                .Include(p => p.Project)
+                .FirstOrDefault(p => p.Id == id);
+
+            if (planning == null)
+            {
+                return false;
+            }
+
+            _context.Planning.Remove(planning);
+
+            _context.SaveChanges();
+
+            return true;
+        }
     }
 }

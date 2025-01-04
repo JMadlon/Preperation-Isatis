@@ -23,7 +23,7 @@ namespace stagevoorbereiding_API.Controllers
                 return BadRequest("Invalid week number. Please provide a value between 1 and 52.");
             }
 
-            var planningRows = _planningService.GetPlanningForWeek(weekNumber);
+            List<PlanningDTO> planningRows = _planningService.GetPlanningForWeek(weekNumber);
 
             return Ok(planningRows);
         }
@@ -46,7 +46,28 @@ namespace stagevoorbereiding_API.Controllers
             }
             catch (Exception ex)
             {
+                Console.WriteLine(ex.Message);
                 return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
+             [HttpDelete("{id}")]
+        public IActionResult DeletePlanning(int id)
+        {
+            try
+            {
+                bool deleted = _planningService.DeletePlanning(id);
+
+                if (!deleted)
+                {
+                    return NotFound($"Planning with ID {id} not found.");
+                }
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"An error occurred while deleting the planning: {ex.Message}");
             }
         }
     }
